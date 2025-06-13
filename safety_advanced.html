@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Advanced 4-Panel MRI Viewer</title>
+    
+    <!-- External Libraries -->
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://get.goxtk.com/xtk_edge.js"></script>
+    
+    <!-- Custom Styles -->
+    <link rel="stylesheet" href="static/css/safety_advanced.css">
+</head>
+<body>
+    <div class="container">
+        <!-- Top Toolbar -->
+        <div class="toolbar">
+            <div class="toolbar-section">
+                <h4>TOOLS</h4>
+                <button class="tool-btn active" id="cursor-tool" data-tool="cursor">Cursor</button>
+                <button class="tool-btn" id="zoom-tool" data-tool="zoom">Zoom</button>
+                <button class="tool-btn" id="pan-tool" data-tool="pan">Pan</button>
+            </div>
+            
+            <div class="toolbar-section">
+                <h4>DRAW</h4>
+                <button class="tool-btn" id="pen-tool" data-tool="pen">Pen</button>
+                <button class="tool-btn" id="line-tool" data-tool="line">Line</button>
+                <button class="tool-btn" id="rectangle-tool" data-tool="rectangle">Rectangle</button>
+                <button class="tool-btn" id="circle-tool" data-tool="circle">Circle</button>
+            </div>
+            
+            <div class="toolbar-section">
+                <h4>STYLE</h4>
+                <input type="color" class="color-picker" id="stroke-color" value="#ff0000">
+                <input type="range" id="stroke-width" min="1" max="10" value="2" title="Stroke Width">
+                <button class="tool-btn" id="eraser-tool" data-tool="eraser">Eraser</button>
+                <button class="tool-btn" id="clear-all">Clear All</button>
+            </div>
+            
+            <div class="toolbar-section">
+                <h4>SETTINGS</h4>
+                <div class="setting-group">
+                    <label>Opacity: <span id="opacity-value">100%</span></label>
+                    <input type="range" id="opacity-slider" min="0" max="100" value="100" class="setting-slider">
+                </div>
+                <div class="setting-group">
+                    <label>Threshold: <span id="threshold-value">128</span></label>
+                    <input type="range" id="threshold-slider" min="0" max="255" value="128" class="setting-slider">
+                </div>
+                <div class="setting-group">
+                    <label>3D Opacity: <span id="volume-opacity-value">50%</span></label>
+                    <input type="range" id="volume-opacity-slider" min="0" max="100" value="50" class="setting-slider">
+                </div>
+            </div>
+            
+            <div class="toolbar-section upload-section">
+                <label for="nii-file" class="upload-label">
+                    <input type="file" id="nii-file" accept=".nii,.nii.gz">
+                    Upload NII
+                </label>
+                <span class="file-name" id="file-name">No file selected</span>
+            </div>
+        </div>
+
+        <!-- Main Panels Container -->
+        <div class="panels-container">
+            <!-- Axial Panel (Top Left) -->
+            <div class="panel" id="axial-panel">
+                <div class="panel-header">
+                    <div class="panel-title">Axial View</div>
+                    <div class="panel-controls">
+                        <button class="panel-btn" onclick="fullscreenPanel('axial')">⛶</button>
+                        <button class="panel-btn" onclick="resetView('axial')">↻</button>
+                    </div>
+                </div>
+                <div class="panel-content">
+                    <div class="viewer-canvas" id="axial-canvas">
+                        <img id="axial-img" alt="Axial Slice">
+                        <canvas class="annotation-canvas" id="axial-annotations"></canvas>
+                        <div class="crosshair" id="axial-crosshair"></div>
+                        <div class="view-controls">
+                            <button class="btn btn-primary animate-btn" data-target="axial-slider">▶ Animate</button>
+                            <button class="btn stop-btn" data-target="axial-slider">⏸ Stop</button>
+                        </div>
+                        <div class="coordinates-display" id="axial-coords">X: 0, Y: 0, Z: 0</div>
+                        <div class="slice-controls">
+                            <span class="slice-label">Slice:</span>
+                            <input type="range" class="slice-slider" id="axial-slider" min="0" max="100" value="50">
+                            <span class="slice-info" id="axial-value">50</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Coronal Panel (Top Right) -->
+            <div class="panel" id="coronal-panel">
+                <div class="panel-header">
+                    <div class="panel-title">Coronal View</div>
+                    <div class="panel-controls">
+                        <button class="panel-btn" onclick="fullscreenPanel('coronal')">⛶</button>
+                        <button class="panel-btn" onclick="resetView('coronal')">↻</button>
+                    </div>
+                </div>
+                <div class="panel-content">
+                    <div class="viewer-canvas" id="coronal-canvas">
+                        <img id="coronal-img" alt="Coronal Slice">
+                        <canvas class="annotation-canvas" id="coronal-annotations"></canvas>
+                        <div class="crosshair" id="coronal-crosshair"></div>
+                        <div class="view-controls">
+                            <button class="btn btn-primary animate-btn" data-target="coronal-slider">▶ Animate</button>
+                            <button class="btn stop-btn" data-target="coronal-slider">⏸ Stop</button>
+                        </div>
+                        <div class="coordinates-display" id="coronal-coords">X: 0, Y: 0, Z: 0</div>
+                        <div class="slice-controls">
+                            <span class="slice-label">Slice:</span>
+                            <input type="range" class="slice-slider" id="coronal-slider" min="0" max="100" value="50">
+                            <span class="slice-info" id="coronal-value">50</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Sagittal Panel (Bottom Left) -->
+            <div class="panel" id="sagittal-panel">
+                <div class="panel-header">
+                    <div class="panel-title">Sagittal View</div>
+                    <div class="panel-controls">
+                        <button class="panel-btn" onclick="fullscreenPanel('sagittal')">⛶</button>
+                        <button class="panel-btn" onclick="resetView('sagittal')">↻</button>
+                    </div>
+                </div>
+                <div class="panel-content">
+                    <div class="viewer-canvas" id="sagittal-canvas">
+                        <img id="sagittal-img" alt="Sagittal Slice">
+                        <canvas class="annotation-canvas" id="sagittal-annotations"></canvas>
+                        <div class="crosshair" id="sagittal-crosshair"></div>
+                        <div class="view-controls">
+                            <button class="btn btn-primary animate-btn" data-target="sagittal-slider">▶ Animate</button>
+                            <button class="btn stop-btn" data-target="sagittal-slider">⏸ Stop</button>
+                        </div>
+                        <div class="coordinates-display" id="sagittal-coords">X: 0, Y: 0, Z: 0</div>
+                        <div class="slice-controls">
+                            <span class="slice-label">Slice:</span>
+                            <input type="range" class="slice-slider" id="sagittal-slider" min="0" max="100" value="50">
+                            <span class="slice-info" id="sagittal-value">50</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 3D Panel (Bottom Right) -->
+            <div class="panel" id="threed-panel">
+                <div class="panel-header">
+                    <div class="panel-title">3D Volume Render</div>
+                    <div class="panel-controls">
+                        <button class="panel-btn" onclick="fullscreenPanel('threed')">⛶</button>
+                        <button class="panel-btn" onclick="resetView('threed')">↻</button>
+                    </div>
+                </div>
+                <div class="panel-content">
+                    <div class="three-d-viewer" id="three-d-container">
+                        <div class="loading-message">3D Viewer - Load NII file to begin</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Status Bar -->
+        <div class="status-bar" id="status-bar">
+            Ready - Upload a NII file to begin viewing. Sample images loaded for demonstration.
+        </div>
+    </div>
+
+    <!-- Fullscreen Modal -->
+    <div class="fullscreen-modal" id="fullscreen-modal">
+        <div class="panel-header">
+            <div class="panel-title" id="fullscreen-title">Fullscreen View</div>
+            <div class="panel-controls">
+                <button class="panel-btn" onclick="exitFullscreen()">✕ Close</button>
+            </div>
+        </div>
+        <div class="panel-content" id="fullscreen-content">
+            <!-- Content will be moved here dynamically -->
+        </div>
+    </div>
+
+    <!-- Custom JavaScript -->
+    <script src="static/js/safety_advanced.js"></script>
+</body>
+</html>
